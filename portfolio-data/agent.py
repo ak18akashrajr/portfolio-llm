@@ -5,8 +5,15 @@ import certifi
 from groq import Groq
 from dotenv import load_dotenv
 from data_processor import process_stock_data
+import sys
+# Add live-data directory to path
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "live-data"))
+from live_market import get_live_prices
 
 load_dotenv()
+
+
+
 
 class StockAgent:
     def __init__(self, model_name="openai/gpt-oss-120b"):
@@ -69,6 +76,9 @@ class StockAgent:
         """
         self.messages = [{"role": "system", "content": system_prompt}]
 
+
+
+
     def _get_portfolio_stats(self):
         # Calculate QoQ growth
         self.portfolio['Quarter'] = self.portfolio.index.to_period('Q')
@@ -85,10 +95,47 @@ class StockAgent:
         else:
             six_month_growth = "Insufficient data for 6-month calculation"
             
+        # Live Market Data Integration
+        current_invested_value = self.portfolio['Cumulative_Investment'].iloc[-1]
+        
+        # Get symbols from current holdings (reset index to make Symbol a column)
+        # Verify if holdings is empty or has data
+        if not self.holdings.empty:
+            # Check if index is MultiIndex or single index, reset to get Symbol column if it's in index
+            holdings_reset = self.holdings.reset_index()
+            symbols = holdings_reset['Symbol'].unique().tolist()
+            
+            live_prices = get_live_prices(symbols)
+            
+            current_market_value = 0
+            for idx, row in holdings_reset.iterrows():
+                sym = row['Symbol']
+                qty = row['Quantity_Change'] # This is the net quantity
+                
+                # Simple heuristic mapping (same as in live_market.py)
+                mapped_sym = f"{sym}.NS" if '.' not in sym else sym
+                
+                if mapped_sym in live_prices:
+                    price = live_prices[mapped_sym]
+                    current_market_value += qty * price
+                else:
+                    # Fallback to cost basis if live price not found (conservative)
+                    current_market_value += row['Total_Value'] # Total_Value is cost basis here
+            
+            unrealized_pnl = current_market_value - current_invested_value
+            pnl_pct = (unrealized_pnl / current_invested_value) * 100 if current_invested_value != 0 else 0
+        else:
+            current_market_value = current_invested_value
+            unrealized_pnl = 0
+            pnl_pct = 0
+
         return {
             "qoq_growth": qoq_growth.to_dict(),
             "six_month_growth": six_month_growth,
-            "current_value": self.portfolio['Cumulative_Investment'].iloc[-1],
+            "current_value": current_invested_value, # Kept for consistency as "Book Value"
+            "market_value": current_market_value,
+            "unrealized_pnl": unrealized_pnl,
+            "pnl_percentage": pnl_pct,
             "total_orders": len(self.df)
         }
 

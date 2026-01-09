@@ -5,4 +5,6 @@ __pycache__/
 *.xlsx
 portfolio-data/*.xlsx
 portfolio-data/stock_order_history.xlsx
-live-data/
+# Ignore everything in live-data except python scripts
+live-data/*
+!live-data/*.py

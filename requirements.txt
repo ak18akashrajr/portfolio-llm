@@ -5,3 +5,7 @@ python-dotenv
 numpy
 certifi
 streamlit
+yfinance
+pip-system-certs
+pyxirr
+scikit-learn

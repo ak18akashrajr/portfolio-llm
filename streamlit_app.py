@@ -1,14 +1,16 @@
 import streamlit as st
 import sys, os
-# Add portfolio-data directory to Python path for module imports
+# Add portfolio-data and agents directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "portfolio-data"))
-from agent import StockAgent
+sys.path.append(os.path.join(os.path.dirname(__file__), "agents"))
+
+from agents.orchestrator import Orchestrator
 from dotenv import load_dotenv
 
 # Set page configuration
 st.set_page_config(
-    page_title="Stock Analyst LLM",
-    page_icon="📈",
+    page_title="Stock Analyst Multi-Agent",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -36,45 +38,51 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Initialize StockAgent
+# Initialize Orchestrator
 @st.cache_resource
-def get_agent():
-    return StockAgent()
+def get_orchestrator():
+    return Orchestrator()
 
 try:
-    agent = get_agent()
-    stats = agent._get_portfolio_stats()
+    orchestrator = get_orchestrator()
+    # Get stats for sidebar
+    stats = orchestrator.get_portfolio_stats()
 except Exception as e:
-    st.error(f"Error initializing agent: {e}")
+    st.error(f"Error initializing agents: {e}")
     st.stop()
 
 # Sidebar - Portfolio Metrics
-st.sidebar.title("🚀 Portfolio Dashboard")
+st.sidebar.title("🚀 Multi-Agent Dashboard")
 st.sidebar.divider()
 
-st.sidebar.metric("Current Portfolio Value", f"₹{stats['current_value']:,.2f}")
+st.sidebar.metric("Invested Value", f"₹{stats['current_value']:,.2f}")
+st.sidebar.metric("Live Market Value", f"₹{stats.get('market_value', 0):,.2f}")
+
+# Calculate Unrealized P&L Delta color
+pnl = stats.get('unrealized_pnl', 0)
+pnl_pct = stats.get('pnl_percentage', 0)
+st.sidebar.metric("Unrealized P&L", f"₹{pnl:,.2f}", delta=f"{pnl_pct:,.2f}%")
+
 st.sidebar.metric("Total Orders", f"{stats['total_orders']}")
 
 # 6-Month Growth with color
 growth = stats['six_month_growth']
 if isinstance(growth, (int, float)):
-    st.sidebar.metric("6-Month Growth", f"{growth:,.2f}%", delta=f"{growth:,.2f}%")
+    st.sidebar.metric("6-Month Growth (Historical)", f"{growth:,.2f}%")
 else:
     st.sidebar.info(growth)
 
 st.sidebar.divider()
-
-# QoQ Growth Chart in Sidebar or Main
-
+st.sidebar.info("🤖 **Active Agents:**\n- Orchestrator\n- Math Agent\n- Analytics Agent\n- Live Data Agent\n- Prediction Agent\n- Education Agent")
 
 # Main Chat Interface
-st.title("👨‍🔬 Stock Analyst LLM Agent")
-st.caption("Ask queries based on your stock order history (e.g., QoQ growth, specific holdings, performance)")
+st.title("🤖 Multi-Agent Stock Analyst")
+st.caption("Ask anything! The Orchestrator will route your query to the best expert agent.")
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I've analyzed your `stock_order_history.xlsx`. How can I help you today?"}
+        {"role": "assistant", "content": "Hello! I am the **Orchestrator**. I have a team of agents ready to help you with Math, Analytics, Live Data, Predictions, and Education. How can we assist?"}
     ]
 
 # Display chat messages from history on app rerun
@@ -83,16 +91,18 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # React to user input
-if prompt := st.chat_input("Ask about your portfolio..."):
+if prompt := st.chat_input("Ask about XIRR, Predictions, or Analysis..."):
     # Display user message in chat message container
     st.chat_message("user").markdown(prompt)
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    with st.spinner("Analyzing data..."):
+    with st.spinner("Orchestrator is routing your query..."):
         try:
-            # Generate response from agent
-            response = agent.chat(prompt)
+            # Generate response from orchestrator
+            # Note: route_query returns a string directly
+            response = orchestrator.route_query(prompt)
+            
             # Display assistant response in chat message container
             with st.chat_message("assistant"):
                 st.markdown(response)
@@ -103,4 +113,4 @@ if prompt := st.chat_input("Ask about your portfolio..."):
 
 # Footer
 st.markdown("---")
-st.caption("Developed with ❤️ using Groq & Streamlit")
+st.caption("Powered by Multi-Agent Architecture • Groq • Streamlit")
