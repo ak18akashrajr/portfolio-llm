@@ -23,7 +23,9 @@ class StockAgent:
 
         self.client = Groq(api_key=self.api_key, http_client=http_client)
         self.model_name = model_name
-        self.df, self.portfolio, self.holdings = process_stock_data('stock_order_history.xlsx')
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stock_order_history.xlsx")
+        print(f"Loading data from: {file_path}")
+        self.df, self.portfolio, self.holdings = process_stock_data(file_path)
         
         # Conversation history
         stats = self._get_portfolio_stats()

@@ -1,6 +1,7 @@
 import streamlit as st
-import pandas as pd
-import os
+import sys, os
+# Add portfolio-data directory to Python path for module imports
+sys.path.append(os.path.join(os.path.dirname(__file__), "portfolio-data"))
 from agent import StockAgent
 from dotenv import load_dotenv
 

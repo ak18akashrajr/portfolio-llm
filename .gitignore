@@ -1,3 +1,8 @@
 .env
-venv
-stock_order_history.xlsx
+venv/
+__pycache__/
+*.pyc
+*.xlsx
+portfolio-data/*.xlsx
+portfolio-data/stock_order_history.xlsx
+live-data/
