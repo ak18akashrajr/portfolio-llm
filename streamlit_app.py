@@ -64,10 +64,7 @@ else:
 st.sidebar.divider()
 
 # QoQ Growth Chart in Sidebar or Main
-st.sidebar.subheader("QoQ Growth (%)")
-qoq_df = pd.DataFrame.from_dict(stats['qoq_growth'], orient='index', columns=['Growth (%)'])
-qoq_df.index = qoq_df.index.astype(str)
-st.sidebar.bar_chart(qoq_df)
+
 
 # Main Chat Interface
 st.title("👨‍🔬 Stock Analyst LLM Agent")
